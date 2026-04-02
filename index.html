@@ -38,24 +38,24 @@ html,body{min-height:100%;overflow-x:hidden}
   --sh:0 2px 16px rgba(0,0,0,.5);
   --sh2:0 8px 32px rgba(0,0,0,.6);
 }
-body.light{
-  --bg:#f3f6fb;--ink:#ffffff;--ink2:#f0f4fa;
-  --glass:rgba(255,255,255,.7);--glass2:rgba(255,255,255,.85);--glass3:#fff;
-  --line:rgba(15,23,42,.09);--line2:rgba(15,23,42,.16);
-  --tx1:#0f172a;--tx2:#475569;--tx3:#94a3b8;
-  --sh:0 2px 16px rgba(15,23,42,.10);--sh2:0 8px 32px rgba(15,23,42,.12);
+cuerpo . luz {
+  --bg :#f3f6fb; --ink :#ffffff; --ink2 :#f0f4fa;
+  --glass : rgba ( 255 , 255 , 255 , .7 ) ; --glass2 : rgba ( 255 , 255 , 255 , .85 ) ; --glass3 :#fff;
+  --línea : rgba ( 15 , 23 , 42 , .09 ) ; --línea2 : rgba ( 15 , 23 , 42 , .16 ) ;
+  --tx1 :#0f172a; --tx2 :#475569; --tx3 :#94a3b8;
+  --sh : 0  2 px  16 px  rgba ( 15 , 23 , 42 , .10 ) ; --sh2 : 0  8 px  32 px  rgba ( 15 , 23 , 42 , .12 ) ;
 }
-body{
-  font-family:'DM Sans',system-ui,sans-serif;
-  font-size:14px;line-height:1.5;
-  background:var(--bg);color:var(--tx1);
+cuerpo {
+  font-family : 'DM Sans' , system-ui , sans-serif ;
+  tamaño de fuente : 14 px ; altura de línea : 1,5 ;
+  fondo : var ( -bg ) ; color : var ( -tx1 ) ;
 }
 
-/* ─── NOISE TEXTURE ─── */
-body::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  background-size:200px;opacity:.6;
+/* ─── TEXTURA DE RUIDO ─── */
+cuerpo :: después {
+  contenido : '' ; posición : fija ; margen : 0 ; eventos de puntero : ninguno ; índice z : 0 ;
+  background-image : url ( "data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E" ) ;
+  background- size : 200px ; opacity : .6 ;
 }
 body.light::after{opacity:.25}
 
