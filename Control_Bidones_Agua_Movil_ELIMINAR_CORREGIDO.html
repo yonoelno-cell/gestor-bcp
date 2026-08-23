@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Control de Bidones de Agua</title>
+<style>
+:root{
+  --blue:#1f4e78; --blue2:#5b9bd5; --soft:#eef5fb; --yellow:#fff2cc;
+  --green:#e2f0d9; --red:#f4cccc; --gray:#f2f2f2; --text:#1f2937;
+  --border:#c9d8e6; --shadow:0 8px 28px rgba(15,23,42,.16);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text); background:#f5f7fa;
+}
+header{
+  position:sticky; top:0; z-index:20;
+  background:var(--blue); color:#fff; padding:14px 16px;
+  box-shadow:0 2px 10px rgba(0,0,0,.18)
+}
+header h1{font-size:18px;margin:0}
+header small{display:block;opacity:.88;margin-top:3px}
+main{max-width:1180px;margin:auto;padding:12px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px;
+  box-shadow:0 2px 8px rgba(15,23,42,.06)
+}
+.card h3{margin:0 0 8px;font-size:13px;color:#4b5563}
+.big{font-size:28px;font-weight:800}
+.sub{font-size:12px;color:#6b7280;margin-top:2px}
+.ok{background:var(--green)}
+.warn{background:var(--yellow)}
+.bad{background:var(--red)}
+.toolbar{
+  display:flex;gap:8px;flex-wrap:wrap;margin:12px 0
+}
+button{
+  border:0;border-radius:11px;padding:11px 14px;font-weight:700;cursor:pointer;
+  background:var(--blue);color:#fff
+}
+button.secondary{background:#e5e7eb;color:#111827}
+button.good{background:#2e7d32}
+button.danger{background:#b42318}
+button.small{padding:7px 9px;border-radius:8px;font-size:12px}
+.section{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;margin-top:12px
+}
+.section-title{
+  background:var(--blue2);color:#fff;padding:10px 12px;font-weight:800
+}
+.scroll{overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:960px}
+th,td{padding:9px 8px;border-bottom:1px solid #d7e3ed;text-align:center;font-size:13px}
+th{background:#eaf2f8;position:sticky;top:72px;z-index:3}
+td.name{text-align:left;min-width:155px}
+td.note{text-align:left;min-width:180px;color:#4b5563}
+tr.review td{background:#fff7df}
+tr.problem td{background:#fde9e7}
+.badge{
+  display:inline-block;padding:4px 7px;border-radius:999px;font-size:11px;font-weight:800
+}
+.badge.loan{background:#ffedd5;color:#9a3412}
+.badge.swap{background:#dbeafe;color:#1d4ed8}
+.badge.return{background:#dcfce7;color:#166534}
+.badge.provider{background:#ede9fe;color:#6d28d9}
+.badge.review{background:#fee2e2;color:#991b1b}
+.empty-state{padding:22px;text-align:center;color:#6b7280}
+footer{padding:18px;text-align:center;color:#6b7280;font-size:12px}
+
+/* modal */
+.backdrop{
+  position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;
+  align-items:center;justify-content:center;padding:14px;z-index:100
+}
+.backdrop.show{display:flex}
+.modal{
+  background:#fff;width:min(520px,100%);border-radius:18px;box-shadow:var(--shadow);
+  max-height:92vh;overflow:auto
+}
+.modal h2{margin:0;background:var(--blue);color:#fff;padding:14px 16px;font-size:17px}
+.modal-body{padding:14px}
+label{display:block;font-size:12px;font-weight:800;margin:10px 0 5px;color:#4b5563}
+input,select,textarea{
+  width:100%;padding:11px 10px;border:1px solid #b8c8d8;border-radius:10px;
+  font:inherit;background:#fff
+}
+textarea{min-height:72px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:14px}
+.provider-box{
+  margin-top:12px;background:#f3e8ff;border:1px solid #d8b4fe;border-radius:12px;padding:12px
+}
+.provider-box strong{display:block;margin-bottom:4px}
+.notice{
+  padding:10px 12px;background:var(--yellow);border:1px solid #f1d67a;
+  border-radius:12px;margin:10px 0;font-size:13px
+}
+.real-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.real-grid input{text-align:center;font-weight:800}
+
+@media(max-width:760px){
+  header h1{font-size:16px}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .row2,.real-grid{grid-template-columns:1fr 1fr}
+  main{padding:8px}
+  button{flex:1}
+  th{top:67px}
+}
+
+/* Movimientos: tarjetas ordenadas para móvil, sin desplazamiento horizontal */
+.movement-list{padding:10px;background:#f8fafc}
+.day-group{margin-bottom:14px}
+.day-title{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:9px 10px;margin-bottom:7px;border-radius:10px;
+  background:#eaf2f8;color:#24445f;font-weight:800;font-size:13px
+}
+.day-title span:last-child{font-weight:600;color:#64748b;font-size:12px}
+.movement-card{
+  background:#fff;border:1px solid var(--border);border-radius:13px;
+  padding:11px;margin-bottom:8px;box-shadow:0 2px 7px rgba(15,23,42,.05)
+}
+.movement-card.review{background:#fffaf0;border-color:#f0d98d}
+.movement-card.problem{background:#fff1f0;border-color:#efaaa5}
+.move-top{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start
+}
+.move-person{min-width:0}
+.move-person strong{
+  display:block;font-size:16px;line-height:1.2;overflow-wrap:anywhere
+}
+.move-datetime{font-size:12px;color:#64748b;margin-top:3px}
+.move-badge-wrap{max-width:48%;text-align:right}
+.move-badge-wrap .badge{
+  white-space:normal;text-align:center;line-height:1.2;font-size:11px
+}
+.move-info{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:12px;color:#475569
+}
+.move-info span{
+  background:#f1f5f9;border-radius:8px;padding:5px 7px;font-weight:700
+}
+.balance-title{font-size:11px;color:#64748b;margin-top:10px;margin-bottom:5px;font-weight:800}
+.balance-grid{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px
+}
+.balance-item{
+  background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;
+  padding:6px 4px;text-align:center
+}
+.balance-item small{display:block;font-size:9px;color:#64748b;line-height:1.15}
+.balance-item b{display:block;font-size:16px;margin-top:2px}
+.balance-item.total{background:#e2f0d9}
+.move-note{
+  margin-top:8px;padding:7px 8px;border-radius:9px;background:#fff7df;
+  font-size:12px;color:#554b2e;overflow-wrap:anywhere
+}
+.move-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.move-index{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:24px;height:24px;border-radius:999px;background:#eaf2f8;
+  font-size:11px;font-weight:900;color:#1f4e78;margin-right:6px
+}
+@media(max-width:420px){
+  .move-top{grid-template-columns:1fr}
+  .move-badge-wrap{max-width:none;text-align:left}
+  .move-badge-wrap .badge{display:block;width:100%;padding:6px 8px}
+  .balance-grid{grid-template-columns:repeat(5,1fr)}
+  .balance-item{padding:5px 2px}
+  .balance-item small{font-size:8px}
+  .balance-item b{font-size:15px}
+}
+
+
+/* Tarjetas compactas con "Mostrar más" */
+.movement-card{
+  padding:9px 10px;
+  margin-bottom:7px;
+}
+.compact-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+}
+.compact-main{min-width:0}
+.compact-name{
+  font-size:15px;
+  font-weight:800;
+  line-height:1.15;
+  overflow-wrap:anywhere;
+}
+.compact-meta{
+  margin-top:3px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px 8px;
+  color:#64748b;
+  font-size:11px;
+}
+.compact-side{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:5px;
+  min-width:112px;
+}
+.compact-side .badge{
+  max-width:150px;
+  white-space:normal;
+  text-align:center;
+  line-height:1.15;
+}
+.compact-total{
+  font-size:11px;
+  color:#475569;
+  font-weight:800;
+}
+.move-details{
+  margin-top:7px;
+  border-top:1px solid #e2e8f0;
+  padding-top:7px;
+}
+.move-details summary{
+  cursor:pointer;
+  list-style:none;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:6px 9px;
+  border-radius:8px;
+  background:#eaf2f8;
+  color:#1f4e78;
+  font-size:11px;
+  font-weight:900;
+  user-select:none;
+}
+.move-details summary::-webkit-details-marker{display:none}
+.move-details summary::before{content:"＋";font-size:13px}
+.move-details[open] summary::before{content:"−"}
+.details-inner{padding-top:8px}
+@media(max-width:420px){
+  .compact-row{grid-template-columns:1fr}
+  .compact-side{
+    min-width:0;
+    width:100%;
+    flex-direction:row;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .compact-side .badge{max-width:70%}
+}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>💧 Control de 12 Bidones</h1>
+  <small>05/08/2026 al 18/08/2026 · Llenos + Vacíos + Prestados + Proveedor = 12 · Datos restaurados</small>
+</header>
+
+<main>
+  <div class="grid">
+    <div class="card"><h3>LLENOS</h3><div class="big" id="fullCount">0</div><div class="sub">con agua</div></div>
+    <div class="card"><h3>VACÍOS</h3><div class="big" id="emptyCount">0</div><div class="sub">en el local</div></div>
+    <div class="card"><h3>PRESTADOS</h3><div class="big" id="loanCount">0</div><div class="sub">esperando devolución</div></div>
+    <div class="card"><h3>EN PROVEEDOR</h3><div class="big" id="providerCount">0</div><div class="sub">pendientes de volver</div></div>
+  </div>
+
+  <div class="grid" style="margin-top:10px">
+    <div class="card ok"><h3>TOTAL CONTROL</h3><div class="big" id="totalCount">12</div></div>
+    <div class="card warn"><h3>SIN CLASIFICAR</h3><div class="big" id="reviewCount">0</div></div>
+    <div class="card"><h3>CAMBIADOS POR PROVEEDOR</h3><div class="big" id="providerChanged">0</div></div>
+    <div class="card" id="differenceCard"><h3>DIFERENCIA REAL</h3><div class="big" id="realDiff">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button onclick="openMovement()">➕ Nuevo movimiento</button>
+    <button class="good" onclick="quickProvider()">🚚 Cambio proveedor</button>
+    <button class="secondary" onclick="openRealCount()">📷 Conteo real</button>
+    <button class="secondary" onclick="downloadBackup()">💾 Guardar respaldo</button>
+    <button class="secondary" onclick="openImportModal()">📥 Importar movimientos</button>
+    <div id="importStatus" style="display:none;flex-basis:100%;padding:9px 11px;border-radius:10px;font-size:12px;font-weight:800"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Movimientos registrados</div>
+    <div id="movementList" class="movement-list"></div>
+  </div>
+</main>
+
+<footer>Control de bidones · Importar carga movimientos dentro de la página · Guardar respaldo es la única opción que descarga un archivo</footer>
+
+
+
+<!-- CONFIRMAR ELIMINACIÓN -->
+<div class="backdrop" id="deleteModal">
+  <div class="modal">
+    <h2>🗑️ Eliminar movimiento</h2>
+    <div class="modal-body">
+      <div class="notice" style="margin-top:0;background:#f4cccc;border-color:#e5a3a3">
+        ¿Seguro que deseas eliminar este movimiento?
+      </div>
+      <div id="deleteMovementInfo" style="padding:12px;border:1px solid #c9d8e6;border-radius:12px;background:#f8fafc;font-size:13px;line-height:1.5"></div>
+      <div class="modal-actions">
+        <button class="secondary" onclick="cancelDeleteMovement()">Cancelar</button>
+        <button class="danger" onclick="confirmDeleteMovement()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORTAR MOVIMIENTOS -->
+<div class="backdrop" id="importModal">
+  <div class="modal">
+    <h2>📥 Importar movimientos</h2>
+    <div class="modal-body">
+      <div class="notice" style="margin-top:0">
+        Selecciona un archivo <b>JSON</b> o <b>Excel</b>. Seleccionar el archivo
+        <b>NO descarga nada</b> y todavía no modifica tus datos.
+      </div>
+
+      <label>Archivo</label>
+      <input
+        id="dataFileInput"
+        type="file"
+        accept=".json,.xlsx,.xls,.csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+        onchange="analyzeImportFile(event)"
+      >
+
+      <div id="importPreview" style="display:none;margin-top:12px;padding:12px;border-radius:12px;background:#eef5fb;border:1px solid #c9d8e6">
+        <div style="font-weight:800" id="importFileName"></div>
+        <div style="margin-top:5px;font-size:13px" id="importFound"></div>
+        <div style="margin-top:8px;font-size:12px;color:#64748b" id="importExamples"></div>
+      </div>
+
+      <div id="importError" style="display:none;margin-top:12px;padding:10px 12px;border-radius:10px;background:#f4cccc;color:#991b1b;font-weight:700"></div>
+
+      <label style="margin-top:14px">Cómo cargar</label>
+      <select id="importMode">
+        <option value="replace">Reemplazar movimientos actuales</option>
+        <option value="append">Agregar a los movimientos actuales</option>
+      </select>
+
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeImportModal()">Cancelar</button>
+        <button id="importConfirmBtn" class="good" onclick="confirmImportMovements()" disabled>
+          CARGAR MOVIMIENTOS
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOVEMENT MODAL -->
+<div class="backdrop" id="movementModal">
+  <div class="modal">
+    <h2>Nuevo movimiento</h2>
+    <div class="modal-body">
+      <div class="row2">
+        <div>
+          <label>Fecha</label>
+          <input id="mDate" type="date" min="2026-08-05" max="2026-08-18">
+        </div>
+        <div>
+          <label>Hora</label>
+          <input id="mTime" type="time">
+        </div>
+      </div>
+      <label>Nombre / Proveedor</label>
+      <input id="mName" placeholder="Ej. Cori, Sarita, Proveedor">
+      <label>Movimiento</label>
+      <select id="mType" onchange="movementTypeChanged()">
+        <option value="">Seleccionar...</option>
+        <option value="loan">PRESTÓ SIN DEVOLVER</option>
+        <option value="swap">CAMBIO CLIENTE</option>
+        <option value="return">SOLO DEVOLVIÓ VACÍO</option>
+        <option value="provider">CAMBIO PROVEEDOR</option>
+        <option value="review">NO SÉ / REVISAR</option>
+      </select>
+      <div id="normalQty">
+        <label>Cantidad</label>
+        <input id="mQty" type="number" min="1" max="12" value="1">
+      </div>
+      <label>Nota</label>
+      <textarea id="mNote" placeholder="Opcional"></textarea>
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeMovement()">Cancelar</button>
+        <button onclick="saveMovement()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROVIDER POPUP -->
+<div class="backdrop" id="providerModal">
+  <div class="modal">
+    <h2>🚚 Cambio con proveedor</h2>
+    <div class="modal-body">
+      <div class="provider-box">
+        <strong>¿Cuántos bidones cambió el proveedor?</strong>
+        Escribe la cantidad y confirma. Esa cantidad pasará de <b>vacíos → llenos</b>.
+      </div>
+      <div class="row2">
+        <div>
+          <label>Fecha del cambio</label>
+          <input id="providerDate" type="date" min="2026-08-05" max="2026-08-18">
+        </div>
+        <div>
+          <label>Hora del cambio</label>
+          <input id="providerTime" type="time">
+        </div>
+      </div>
+      <label>Cantidad cambiada</label>
+      <input id="providerQty" type="number" min="1" max="12" inputmode="numeric" placeholder="Ej. 8">
+      <div class="notice" id="providerAvailable">Vacíos disponibles: 0</div>
+      <div class="modal-actions">
+        <button class="secondary" onclick="cancelProviderPopup()">Cancelar</button>
+        <button class="good" onclick="confirmProviderPopup()">Confirmar cambio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REAL COUNT -->
+<div class="backdrop" id="realModal">
+  <div class="modal">
+    <h2>📷 Conteo real / cámaras</h2>
+    <div class="modal-body">
+      <div class="real-grid">
+        <div><label>Llenos</label><input id="rFull" type="number" min="0" max="12"></div>
+        <div><label>Vacíos</label><input id="rEmpty" type="number" min="0" max="12"></div>
+        <div><label>Prestados</label><input id="rLoan" type="number" min="0" max="12"></div>
+        <div><label>Proveedor</label><input id="rProvider" type="number" min="0" max="12"></div>
+      </div>
+      <div class="notice" id="realSummary">Total localizado: 0</div>
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeRealCount()">Cancelar</button>
+        <button onclick="saveRealCount()">Guardar conteo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="bidonBackupData" type="application/json"></script>
+<script>
+const TOTAL = 12;
+const STORAGE_KEY = 'control_bidones_2026_main';
+const REAL_KEY = 'control_bidones_real_2026_main';
+
+const seed = [{"date":"2026-08-05","time":"12:30","name":"Cori","type":"loan","qty":1,"note":""},{"date":"2026-08-05","time":"19:38","name":"Papá Sarita","type":"swap","qty":1,"note":""},{"date":"2026-08-05","time":"19:55","name":"Toribio","type":"swap","qty":1,"note":""},{"date":"2026-08-06","time":"07:50","name":"Cristian","type":"swap","qty":1,"note":""},{"date":"2026-08-06","time":"14:07","name":"Cori","type":"swap","qty":1,"note":""},{"date":"2026-08-06","time":"19:23","name":"Sarita","type":"swap","qty":1,"note":""},{"date":"2026-08-07","time":"09:33","name":"Cori","type":"swap","qty":1,"note":""},{"date":"2026-08-07","time":"13:07","name":"Desconocido","type":"swap","qty":1,"note":""},{"date":"2026-08-10","time":"14:25","name":"Prima Sarita","type":"swap","qty":1,"note":""},{"date":"2026-08-13","time":"09:16","name":"Gemelos","type":"review","qty":1,"note":""},{"date":"2026-08-13","time":"13:50","name":"Papá de Gema","type":"review","qty":1,"note":""},{"date":"2026-08-13","time":"16:31","name":"Toribio","type":"review","qty":1,"note":""},{"date":"2026-08-13","time":"19:20","name":"Hijo de Edas (?)","type":"review","qty":1,"note":"Nombre por confirmar"},{"date":"2026-08-14","time":"12:39","name":"Espaldón (?)","type":"review","qty":1,"note":"Nombre por confirmar"},{"date":"2026-08-14","time":"19:30","name":"Señor desconocido","type":"review","qty":1,"note":""},{"date":"2026-08-14","time":"","name":"Pareja Sarita","type":"review","qty":1,"note":"Hora por confirmar"},{"date":"2026-08-14","time":"20:32","name":"Cori","type":"review","qty":1,"note":""},{"date":"2026-08-15","time":"12:54","name":"Prima Sarita","type":"review","qty":1,"note":""},{"date":"2026-08-15","time":"16:20","name":"Sarita","type":"review","qty":1,"note":""},{"date":"2026-08-15","time":"19:56","name":"Jacinto (?)","type":"review","qty":1,"note":"Nombre por confirmar"},{"date":"2026-08-16","time":"19:28","name":"Chusudo borracho (?)","type":"review","qty":1,"note":"Nombre/apodo por confirmar"},{"date":"2026-08-17","time":"11:46","name":"Señora A","type":"review","qty":1,"note":""},{"date":"2026-08-17","time":"17:13","name":"Cuñada","type":"review","qty":1,"note":""}].map((x,i)=>({...x,id:'seed_'+i,created:i}));
+
+let movements = loadMovements();
+let providerReturnTarget = null;
+
+function getEmbeddedBackup(){
+  const el=document.getElementById('bidonBackupData');
+  if(!el) return null;
+  const raw=(el.textContent||'').trim();
+  if(!raw) return null;
+  try{
+    const data=JSON.parse(raw);
+    if(data && Array.isArray(data.movements)) return data;
+  }catch(e){}
+  return null;
+}
+
+function loadMovements(){
+  const keys=[
+    STORAGE_KEY,
+    'control_bidones_2026_restaurado_v3',
+    'control_bidones_2026_restaurado_v2',
+    'control_bidones_2026_v1'
+  ];
+
+  for(const key of keys){
+    try{
+      const raw=localStorage.getItem(key);
+      if(!raw) continue;
+      const saved=JSON.parse(raw);
+      if(Array.isArray(saved) && saved.length>0){
+        if(key!==STORAGE_KEY){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+        }
+        return saved;
+      }
+    }catch(e){
+      console.warn('Datos anteriores inválidos en',key,e);
+    }
+  }
+
+  const initial=structuredClone(seed);
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(initial)); }catch(e){}
+  return initial;
+}
+function persist(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(movements));
+}
+function weekdayES(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-').map(Number);
+  return ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][new Date(y,m-1,d).getDay()];
+}
+function formatDate(iso){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function typeLabel(t){
+  return {
+    loan:'PRESTÓ SIN DEVOLVER',
+    swap:'CAMBIO CLIENTE',
+    return:'SOLO DEVOLVIÓ VACÍO',
+    provider:'CAMBIO PROVEEDOR',
+    review:'NO SÉ / REVISAR'
+  }[t] || t;
+}
+function sortedMovements(){
+  return [...movements].sort((a,b)=>{
+    const ta=(a.time||'23:59');
+    const tb=(b.time||'23:59');
+    return (a.date+ta).localeCompare(b.date+tb) || (a.created||0)-(b.created||0);
+  });
+}
+function calc(){
+  let s={full:12, empty:0, loan:0, provider:0, providerChanged:0};
+  const history=[];
+  for(const m of sortedMovements()){
+    const q=Number(m.qty)||1;
+    if(m.type==='loan'){ s.full-=q; s.loan+=q; }
+    else if(m.type==='swap'){ s.full-=q; s.empty+=q; }
+    else if(m.type==='return'){ s.empty+=q; s.loan-=q; }
+    else if(m.type==='provider'){ s.full+=q; s.empty-=q; s.providerChanged+=q; }
+    history.push({...m,state:{...s,total:s.full+s.empty+s.loan+s.provider}});
+  }
+  return {state:s,history};
+}
+function render(){
+  const {state,history}=calc();
+  document.getElementById('fullCount').textContent=state.full;
+  document.getElementById('emptyCount').textContent=state.empty;
+  document.getElementById('loanCount').textContent=state.loan;
+  document.getElementById('providerCount').textContent=state.provider;
+  document.getElementById('providerChanged').textContent=state.providerChanged;
+  document.getElementById('totalCount').textContent=state.full+state.empty+state.loan+state.provider;
+  document.getElementById('reviewCount').textContent=movements.filter(x=>x.type==='review').length;
+
+  const list=document.getElementById('movementList');
+  list.innerHTML='';
+
+  if(!history.length){
+    list.innerHTML='<div class="empty-state">Aún no hay movimientos.</div>';
+    renderReal();
+    return;
+  }
+
+  const groups=new Map();
+  history.forEach((m,idx)=>{
+    const key=m.date||'sin-fecha';
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push({...m,displayIndex:idx+1});
+  });
+
+  for(const [date,items] of groups){
+    const group=document.createElement('div');
+    group.className='day-group';
+
+    const title=document.createElement('div');
+    title.className='day-title';
+    title.innerHTML=`<span>${formatDate(date)} · ${weekdayES(date)}</span><span>${items.length} movimiento${items.length===1?'':'s'}</span>`;
+    group.appendChild(title);
+
+    for(const m of items){
+      const card=document.createElement('div');
+      card.className='movement-card';
+      if(m.type==='review') card.classList.add('review');
+      if([m.state.full,m.state.empty,m.state.loan,m.state.provider].some(v=>v<0)) card.classList.add('problem');
+
+      const note=m.note ? `<div class="move-note"><b>Nota:</b> ${escapeHtml(m.note)}</div>` : '';
+
+      card.innerHTML=`
+        <div class="compact-row">
+          <div class="compact-main">
+            <div class="compact-name"><span class="move-index">${m.displayIndex}</span>${escapeHtml(m.name||'Sin nombre')}</div>
+            <div class="compact-meta">
+              <span>🕒 ${m.time||'Sin hora'}</span>
+              <span>📦 Cant. ${m.qty||1}</span>
+            </div>
+          </div>
+
+          <div class="compact-side">
+            <span class="badge ${m.type}">${typeLabel(m.type)}</span>
+            <span class="compact-total">Total ${m.state.total}</span>
+          </div>
+        </div>
+
+        <details class="move-details">
+          <summary>Mostrar más</summary>
+          <div class="details-inner">
+            <div class="move-datetime">${formatDate(m.date)} · ${weekdayES(m.date)} · ${m.time||'Hora no registrada'}</div>
+
+            <div class="balance-title">SALDO DESPUÉS DEL MOVIMIENTO</div>
+            <div class="balance-grid">
+              <div class="balance-item"><small>Llenos</small><b>${m.state.full}</b></div>
+              <div class="balance-item"><small>Vacíos</small><b>${m.state.empty}</b></div>
+              <div class="balance-item"><small>Prestados</small><b>${m.state.loan}</b></div>
+              <div class="balance-item"><small>Proveedor</small><b>${m.state.provider}</b></div>
+              <div class="balance-item total"><small>Total</small><b>${m.state.total}</b></div>
+            </div>
+
+            ${note}
+
+            <div class="move-actions">
+              <button class="small danger" onclick="openDeleteMovement('${m.id}')">Eliminar movimiento</button>
+            </div>
+          </div>
+        </details>`;
+      group.appendChild(card);
+    }
+    list.appendChild(group);
+  }
+  renderReal();
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+function openMovement(){
+  const today='2026-08-18';
+  document.getElementById('mDate').value=today;
+  document.getElementById('mTime').value='';
+  document.getElementById('mName').value='';
+  document.getElementById('mType').value='';
+  document.getElementById('mQty').value=1;
+  document.getElementById('mNote').value='';
+  document.getElementById('movementModal').classList.add('show');
+}
+function closeMovement(){ document.getElementById('movementModal').classList.remove('show'); }
+function movementTypeChanged(){
+  const t=document.getElementById('mType').value;
+  if(t==='provider'){
+    providerReturnTarget='movement';
+    const {state}=calc();
+    document.getElementById('providerAvailable').textContent=`Vacíos disponibles: ${state.empty}`;
+    document.getElementById('providerQty').value='';
+    document.getElementById('providerDate').value=document.getElementById('mDate').value || '2026-08-18';
+    document.getElementById('providerTime').value=document.getElementById('mTime').value || '';
+    document.getElementById('providerModal').classList.add('show');
+  }
+}
+function saveMovement(){
+  const date=document.getElementById('mDate').value;
+  const time=document.getElementById('mTime').value;
+  const name=document.getElementById('mName').value.trim();
+  const type=document.getElementById('mType').value;
+  const qty=Number(document.getElementById('mQty').value)||1;
+  const note=document.getElementById('mNote').value.trim();
+  if(!date || !type){ alert('Completa fecha y movimiento.'); return; }
+  if(type==='provider'){ 
+    providerReturnTarget='movement';
+    movementTypeChanged();
+    return;
+  }
+  movements.push({id:'m_'+Date.now(),created:Date.now(),date,time,name,type,qty,note});
+  persist(); closeMovement(); render();
+}
+function quickProvider(){
+  providerReturnTarget='quick';
+  const {state}=calc();
+  document.getElementById('providerAvailable').textContent=`Vacíos disponibles: ${state.empty}`;
+  document.getElementById('providerQty').value='';
+  document.getElementById('providerDate').value='2026-08-18';
+  document.getElementById('providerTime').value='';
+  document.getElementById('providerModal').classList.add('show');
+}
+function cancelProviderPopup(){
+  document.getElementById('providerModal').classList.remove('show');
+  if(providerReturnTarget==='movement'){
+    document.getElementById('mType').value='';
+  }
+  providerReturnTarget=null;
+}
+function confirmProviderPopup(){
+  const qty=Number(document.getElementById('providerQty').value);
+  const date=document.getElementById('providerDate').value;
+  const time=document.getElementById('providerTime').value || '';
+
+  if(!date){ alert('Selecciona la fecha del cambio.'); return; }
+  if(!qty || qty<1 || qty>12){ alert('Ingresa una cantidad entre 1 y 12.'); return; }
+
+  const {state}=calc();
+  if(qty>state.empty){
+    if(!confirm(`Solo hay ${state.empty} vacíos según el registro. ¿Registrar cambio de ${qty} de todas formas?`)) return;
+  }
+
+  let name='Proveedor', note='';
+  if(providerReturnTarget==='movement'){
+    name=document.getElementById('mName').value.trim() || 'Proveedor';
+    note=document.getElementById('mNote').value.trim();
+  }
+
+  movements.push({
+    id:'p_'+Date.now(),created:Date.now(),date,time,name,
+    type:'provider',qty,note
+  });
+
+  persist();
+  document.getElementById('providerModal').classList.remove('show');
+  if(providerReturnTarget==='movement') closeMovement();
+  providerReturnTarget=null;
+  render();
+}
+let pendingDeleteId=null;
+
+function openDeleteMovement(id){
+  const m=movements.find(x=>String(x.id)===String(id));
+  if(!m){
+    alert('No se encontró el movimiento.');
+    return;
+  }
+  pendingDeleteId=m.id;
+  const info=document.getElementById('deleteMovementInfo');
+  if(info){
+    info.innerHTML=
+      `<b>${escapeHtml(m.name||'Sin nombre')}</b><br>`+
+      `${formatDate(m.date)} · ${m.time||'Sin hora'}<br>`+
+      `${typeLabel(m.type)} · Cantidad ${m.qty||1}`;
+  }
+  document.getElementById('deleteModal').classList.add('show');
+}
+
+function cancelDeleteMovement(){
+  pendingDeleteId=null;
+  document.getElementById('deleteModal').classList.remove('show');
+}
+
+function confirmDeleteMovement(){
+  if(pendingDeleteId===null || pendingDeleteId===undefined) return;
+  const before=movements.length;
+  movements=movements.filter(x=>String(x.id)!==String(pendingDeleteId));
+  const removed=before-movements.length;
+  persist();
+  cancelDeleteMovement();
+  render();
+  if(removed>0){
+    if(typeof showImportStatus==='function'){
+      showImportStatus('✅ Movimiento eliminado correctamente.', true);
+    }
+  }else{
+    alert('No se pudo eliminar el movimiento.');
+  }
+}
+
+/* real count */
+function openRealCount(){
+  const saved=JSON.parse(localStorage.getItem(REAL_KEY)||'{}');
+  ['Full','Empty','Loan','Provider'].forEach(k=>{
+    document.getElementById('r'+k).value = saved[k.toLowerCase()] ?? '';
+  });
+  updateRealSummary();
+  document.getElementById('realModal').classList.add('show');
+}
+function closeRealCount(){ document.getElementById('realModal').classList.remove('show'); }
+function updateRealSummary(){
+  const vals=['rFull','rEmpty','rLoan','rProvider'].map(id=>Number(document.getElementById(id).value)||0);
+  document.getElementById('realSummary').textContent=`Total localizado: ${vals.reduce((a,b)=>a+b,0)} de 12`;
+}
+['rFull','rEmpty','rLoan','rProvider'].forEach(id=>{
+  document.addEventListener('input',e=>{ if(e.target.id===id) updateRealSummary(); });
+});
+function saveRealCount(){
+  const obj={
+    full:Number(document.getElementById('rFull').value)||0,
+    empty:Number(document.getElementById('rEmpty').value)||0,
+    loan:Number(document.getElementById('rLoan').value)||0,
+    provider:Number(document.getElementById('rProvider').value)||0
+  };
+  localStorage.setItem(REAL_KEY,JSON.stringify(obj));
+  closeRealCount(); renderReal();
+}
+function renderReal(){
+  const raw=localStorage.getItem(REAL_KEY);
+  const el=document.getElementById('realDiff');
+  const card=document.getElementById('differenceCard');
+  card.classList.remove('ok','bad','warn');
+  if(!raw){ el.textContent='—'; return; }
+  const r=JSON.parse(raw);
+  const total=(r.full||0)+(r.empty||0)+(r.loan||0)+(r.provider||0);
+  const diff=TOTAL-total;
+  el.textContent=diff===0?'0':(diff>0?`Falta ${diff}`:`Sobra ${Math.abs(diff)}`);
+  card.classList.add(diff===0?'ok':'bad');
+}
+
+/* backup */
+function buildBackupData(){
+  return {
+    version:3,
+    format:'control-bidones-backup',
+    exportedAt:new Date().toISOString(),
+    movements,
+    real:JSON.parse(localStorage.getItem(REAL_KEY)||'null')
+  };
+}
+
+function downloadBackup(){
+  const data=buildBackupData();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const stamp=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+  a.href=url;
+  a.download=`Respaldo_Bidones_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+
+function showImportStatus(message,ok=true){
+  const el=document.getElementById('importStatus');
+  if(!el) return;
+  el.style.display='block';
+  el.style.background=ok?'#e2f0d9':'#f4cccc';
+  el.style.color=ok?'#166534':'#991b1b';
+  el.textContent=message;
+  setTimeout(()=>{el.style.display='none';},7000);
+}
+
+function normalizeType(value){
+  const s=String(value||'').trim().toUpperCase();
+  if(!s) return 'review';
+  if(s==='LOAN') return 'loan';
+  if(s==='SWAP') return 'swap';
+  if(s==='RETURN') return 'return';
+  if(s==='PROVIDER') return 'provider';
+  if(s==='REVIEW') return 'review';
+  if(s.includes('PROVEEDOR') && s.includes('CAMBIO')) return 'provider';
+  if(s.includes('PREST') && s.includes('NO')) return 'loan';
+  if(s.includes('CAMBIO')) return 'swap';
+  if(s.includes('DEVOLVI')) return 'return';
+  return 'review';
+}
+
+function normalizeDate(value){
+  if(value===null || value===undefined || value==='') return '';
+  if(value instanceof Date && !isNaN(value)){
+    const y=value.getFullYear();
+    const m=String(value.getMonth()+1).padStart(2,'0');
+    const d=String(value.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  if(typeof value==='number' && value>20000){
+    // Excel serial date (1900 date system)
+    const base=new Date(Date.UTC(1899,11,30));
+    const dt=new Date(base.getTime()+Math.round(value)*86400000);
+    return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+  }
+  const s=String(value).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m) return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  return '';
+}
+
+function normalizeTime(value){
+  if(value===null || value===undefined || value==='') return '';
+  if(typeof value==='number' && value>=0 && value<1){
+    const mins=Math.round(value*24*60);
+    return `${String(Math.floor(mins/60)%24).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;
+  }
+  const s=String(value).trim();
+  const m=s.match(/(\d{1,2}):(\d{2})/);
+  return m?`${String(Number(m[1])).padStart(2,'0')}:${m[2]}`:'';
+}
+
+function normalizeMovement(m,i){
+  return {
+    id:m.id || `imp_${Date.now()}_${i}`,
+    created:m.created ?? (Date.now()+i),
+    date:normalizeDate(m.date ?? m.fecha) || '2026-08-18',
+    time:normalizeTime(m.time ?? m.hora),
+    name:String(m.name ?? m.nombre ?? m.cliente ?? m['Nombre / Proveedor'] ?? 'Sin nombre').trim() || 'Sin nombre',
+    type:normalizeType(m.type ?? m.movimiento ?? m.Movimiento),
+    qty:Number(m.qty ?? m.cantidad ?? m['Cant.'] ?? m.Cant ?? 1) || 1,
+    note:String(m.note ?? m.nota ?? m.observacion ?? m.observación ?? m.Observación ?? '').trim()
+  };
+}
+
+function parseJsonText(raw){
+  const data=JSON.parse(raw);
+  let arr=null;
+  if(Array.isArray(data)) arr=data;
+  else if(data && Array.isArray(data.movements)) arr=data.movements;
+  else if(data && Array.isArray(data.data)) arr=data.data;
+  if(!arr) throw new Error('El JSON no contiene una lista de movimientos.');
+  return arr.map(normalizeMovement);
+}
+
+function parseHtmlBackup(raw){
+  const doc=new DOMParser().parseFromString(raw,'text/html');
+  const embedded=doc.getElementById('bidonBackupData');
+  if(embedded && embedded.textContent.trim()){
+    return parseJsonText(embedded.textContent.trim());
+  }
+  // También aceptar nuestro HTML original: extraer el const seed = [...] .map(...)
+  const m=raw.match(/const\s+seed\s*=\s*(\[.*?\])\.map\(/s);
+  if(m){
+    const arr=JSON.parse(m[1]);
+    return arr.map(normalizeMovement);
+  }
+  throw new Error('Ese HTML no contiene datos importables.');
+}
+
+function cleanKey(k){
+  return String(k||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+}
+
+function excelMatrixToMovements(matrix){
+  if(!Array.isArray(matrix) || !matrix.length) return [];
+  let hi=-1;
+  for(let i=0;i<Math.min(matrix.length,40);i++){
+    const row=(matrix[i]||[]).map(v=>cleanKey(v));
+    if(row.includes('fecha') && row.some(x=>x.includes('movimiento')) && row.some(x=>x.includes('nombre') || x.includes('cliente'))){
+      hi=i; break;
+    }
+  }
+  if(hi<0) throw new Error('No encontré las columnas Fecha, Nombre/Cliente y Movimiento en el Excel.');
+
+  const headers=(matrix[hi]||[]).map(cleanKey);
+  const idx=(...names)=>{
+    for(const n of names){
+      const exact=headers.indexOf(n);
+      if(exact>=0) return exact;
+    }
+    for(let j=0;j<headers.length;j++){
+      if(names.some(n=>headers[j].includes(n))) return j;
+    }
+    return -1;
+  };
+
+  const iDate=idx('fecha');
+  const iTime=idx('hora');
+  const iName=idx('nombre / proveedor','nombre','cliente');
+  const iType=idx('movimiento');
+  const iQty=idx('cant.','cant','cantidad');
+  const iNote=idx('nota','observacion');
+
+  const out=[];
+  for(let r=hi+1;r<matrix.length;r++){
+    const row=matrix[r]||[];
+    const rawDate=iDate>=0?row[iDate]:'';
+    const rawName=iName>=0?row[iName]:'';
+    const rawType=iType>=0?row[iType]:'';
+    if(String(rawDate||'').trim()==='' && String(rawName||'').trim()==='' && String(rawType||'').trim()==='') continue;
+
+    const date=normalizeDate(rawDate);
+    const name=String(rawName||'').trim();
+    if(!date && !name) continue;
+
+    out.push(normalizeMovement({
+      fecha:date || rawDate,
+      hora:iTime>=0?row[iTime]:'',
+      nombre:name || 'Sin nombre',
+      movimiento:rawType || 'NO SÉ / REVISAR',
+      cantidad:iQty>=0?row[iQty]:1,
+      observacion:iNote>=0?row[iNote]:''
+    },out.length));
+  }
+  return out;
+}
+
+async function parseExcelFile(file){
+  if(typeof XLSX==='undefined'){
+    throw new Error('No se cargó el lector de Excel. Verifica que tengas conexión a Internet y recarga la página.');
+  }
+  const ab=await file.arrayBuffer();
+  const wb=XLSX.read(ab,{type:'array',cellDates:false});
+  if(!wb.SheetNames.length) throw new Error('El Excel no tiene hojas.');
+
+  // Buscar primero una hoja de control/movimientos/clientes.
+  const names=[...wb.SheetNames].sort((a,b)=>{
+    const sa=/control|mov|cliente/i.test(a)?0:1;
+    const sb=/control|mov|cliente/i.test(b)?0:1;
+    return sa-sb;
+  });
+
+  let lastError=null;
+  for(const name of names){
+    try{
+      const matrix=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:'',raw:true});
+      const parsed=excelMatrixToMovements(matrix);
+      if(parsed.length) return parsed;
+    }catch(e){ lastError=e; }
+  }
+  throw lastError || new Error('No encontré movimientos reconocibles en el Excel.');
+}
+
+
+let pendingImportMovements=null;
+let pendingImportFileName='';
+
+function openImportModal(){
+  pendingImportMovements=null;
+  pendingImportFileName='';
+  const input=document.getElementById('dataFileInput');
+  input.value='';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importError').style.display='none';
+  document.getElementById('importConfirmBtn').disabled=true;
+  document.getElementById('importMode').value='replace';
+  document.getElementById('importModal').classList.add('show');
+}
+
+function closeImportModal(){
+  document.getElementById('importModal').classList.remove('show');
+  pendingImportMovements=null;
+  pendingImportFileName='';
+}
+
+function setImportError(message){
+  const err=document.getElementById('importError');
+  err.textContent=message;
+  err.style.display='block';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importConfirmBtn').disabled=true;
+}
+
+function importPreviewText(list){
+  const examples=list.slice(0,4).map(m=>{
+    const who=m.name || 'Sin nombre';
+    return `${formatDate(m.date)} · ${m.time || 'sin hora'} · ${who} · ${typeLabel(m.type)}`;
+  });
+  return examples.length ? 'Ejemplos: ' + examples.join(' | ') : '';
+}
+
+async function analyzeImportFile(event){
+  const file=event.target.files && event.target.files[0];
+  pendingImportMovements=null;
+  pendingImportFileName='';
+  document.getElementById('importError').style.display='none';
+  document.getElementById('importPreview').style.display='none';
+  document.getElementById('importConfirmBtn').disabled=true;
+
+  if(!file) return;
+
+  try{
+    const lower=file.name.toLowerCase();
+    let imported=[];
+
+    if(lower.endsWith('.xlsx') || lower.endsWith('.xls') || lower.endsWith('.csv')){
+      imported=await parseExcelFile(file);
+    }else if(lower.endsWith('.json')){
+      const raw=await file.text();
+      imported=parseJsonText(raw);
+    }else{
+      throw new Error('Formato no permitido. Selecciona JSON, XLSX, XLS o CSV.');
+    }
+
+    if(!Array.isArray(imported) || imported.length===0){
+      throw new Error('No encontré movimientos reconocibles dentro del archivo.');
+    }
+
+    pendingImportMovements=imported;
+    pendingImportFileName=file.name;
+
+    document.getElementById('importFileName').textContent='Archivo: '+file.name;
+    document.getElementById('importFound').innerHTML=
+      '<b>'+imported.length+'</b> movimientos encontrados. Todavía NO se han cargado.';
+    document.getElementById('importExamples').textContent=importPreviewText(imported);
+    document.getElementById('importPreview').style.display='block';
+    document.getElementById('importConfirmBtn').disabled=false;
+  }catch(err){
+    console.error(err);
+    setImportError(err && err.message ? err.message : 'No se pudo leer el archivo.');
+  }
+}
+
+function dedupeMovements(list){
+  const seen=new Set();
+  return list.filter(m=>{
+    const key=[
+      m.date||'', m.time||'', (m.name||'').trim().toLowerCase(),
+      m.type||'', Number(m.qty)||1
+    ].join('|');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function confirmImportMovements(){
+  if(!pendingImportMovements || !pendingImportMovements.length){
+    setImportError('Primero selecciona y analiza un archivo.');
+    return;
+  }
+
+  const mode=document.getElementById('importMode').value;
+  const count=pendingImportMovements.length;
+  const fileName=pendingImportFileName;
+
+  if(mode==='replace'){
+    const ok=confirm(
+      `Se cargarán ${count} movimientos desde "${fileName}".\n\n`+
+      'Esto REEMPLAZARÁ los movimientos que están actualmente en la página.\n\n¿Continuar?'
+    );
+    if(!ok) return;
+    movements=pendingImportMovements;
+  }else{
+    const ok=confirm(
+      `Se agregarán ${count} movimientos desde "${fileName}" sin borrar los actuales.\n\n¿Continuar?`
+    );
+    if(!ok) return;
+    movements=dedupeMovements([...movements,...pendingImportMovements]);
+  }
+
+  persist();
+  render();
+  closeImportModal();
+
+  showImportStatus(
+    `✅ Movimientos cargados dentro del sistema: ${movements.length} registros activos.`,
+    true
+  );
+
+  // Subir al inicio de "Movimientos registrados" para que se vea el resultado.
+  setTimeout(()=>{
+    const section=document.getElementById('movementList');
+    if(section) section.scrollIntoView({behavior:'smooth',block:'start'});
+  },120);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeMovement(); closeRealCount(); closeImportModal(); cancelDeleteMovement();
+    document.getElementById('providerModal').classList.remove('show');
+  }
+});
+render();
+</script>
+</body>
+</html>
